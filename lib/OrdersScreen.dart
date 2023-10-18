@@ -226,6 +226,10 @@ class OrdersScreenState extends State<OrdersScreen> {
         setState(() {
           fromFilter = true;
         });
+      } else {
+        setState(() {
+          txtNoData = 'No Data Found';
+        });
       }
     });
     _closeFilterScreen(); // Close the filter screen after applying filters
@@ -326,13 +330,13 @@ class OrdersScreenState extends State<OrdersScreen> {
                           final transaction = filteredOrders[index];
                           var textColor = Colors.green; // Default color
 
-                          if (transaction.state == 'Pending') {
+                          if (transaction.state == 'PENDING') {
                             textColor = Colors.orange;
-                          } else if (transaction.state == 'Fail') {
+                          } else if (transaction.state == 'FAIL') {
                             textColor = Colors.red;
-                          } else if (transaction.state == 'Success') {
+                          } else if (transaction.state == 'PAID') {
                             textColor = Colors.green;
-                          } else if (transaction.state == 'Reject') {
+                          } else if (transaction.state == 'REJECTED') {
                             textColor = Colors.red;
                           } // Add more conditions for other status values
 
@@ -438,12 +442,12 @@ class OrdersScreenState extends State<OrdersScreen> {
           ],
         ),
       ),
-      floatingActionButton: isFilterScreenVisible
-          ? null
-          : FloatingActionButton(
-              onPressed: openScreen,
-              child: const Icon(Icons.filter_list),
-            ),
+      // floatingActionButton: isFilterScreenVisible
+      //     ? null
+      //     : FloatingActionButton(
+      //         onPressed: openScreen,
+      //         child: const Icon(Icons.filter_list),
+      //       ),
     );
   }
 }

@@ -313,7 +313,7 @@ class DisputeDetailScreenState extends State<DisputeDetailScreen> {
                       ),
                       padding: EdgeInsets.all(10), // Padding inside the box
                       child: Text(
-                        '${responseData['disputeType'] ?? 'Nil'.toString().replaceAll('_', ' ')}',
+                        responseData['disputeType']?.toString()?.replaceAll('_', ' ') ?? 'Nil',
                         style: const TextStyle(
                           color: Colors.black,
                           fontSize: 15,
@@ -527,7 +527,7 @@ class DisputeDetailScreenState extends State<DisputeDetailScreen> {
                       ),
                       padding: EdgeInsets.all(10), // Padding inside the box
                       child: Text(
-                        '${responseData['state'] ?? 'Nil'}',
+                        responseData['state']?.toString()?.replaceAll('_', ' ') ?? 'Nil',
                         style: const TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
@@ -896,7 +896,7 @@ class DisputeDetailScreenState extends State<DisputeDetailScreen> {
                       ),
                       padding: EdgeInsets.all(10), // Padding inside the box
                       child: Text(
-                        '${transactionData['paymentChannel'] ?? 'Nil'}',
+                        transactionData['paymentChannel']?.toString()?.replaceAll('_', ' ') ?? 'Nil',
                         style: const TextStyle(
                           color: Colors.black,
                           fontSize: 15,
