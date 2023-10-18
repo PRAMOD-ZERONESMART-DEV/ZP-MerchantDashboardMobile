@@ -225,7 +225,7 @@ class _DisputeFilterScreenState extends State<DisputeFilterScreen> {
                   });
                 }
               },
-              items: <String>['All', 'OPEN', 'CLOSED', 'WON']
+              items: <String>['All', 'OPEN', 'CLOSED', 'WON', 'LOST' ]
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,

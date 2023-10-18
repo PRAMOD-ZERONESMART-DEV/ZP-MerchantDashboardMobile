@@ -34,8 +34,8 @@ class DisputeScreenState extends State<DisputeScreen> {
   bool _isLoading = false;
 
   final ScrollController _scrollController = ScrollController();
-  int currentPage = 1;
-  int itemsPerPage = 10;
+  //int currentPage = 1;
+  //int itemsPerPage = 10;
 
   @override
   void initState() {
@@ -170,7 +170,7 @@ class DisputeScreenState extends State<DisputeScreen> {
             print('orderData: $jsonDataList');
           }
 
-          currentPage++;
+          //currentPage++;
         } else if (response.statusCode == 401) {
           String message = responseData['message'];
           Globals.showToast(context, '$message');
@@ -232,6 +232,13 @@ class DisputeScreenState extends State<DisputeScreen> {
     setState(() {
       filteredDispute = filterTransactions(
           startDate, endDate, status, merchantId, deadlineDate);
+
+      print(filteredDispute.length);
+      if (filteredDispute.isEmpty) {
+        setState(() {
+          txtNoData = 'No Data Found';
+        });
+      }
     });
     _closeFilterScreen(); // Close the filter screen after applying filters
   }
@@ -354,10 +361,13 @@ class DisputeScreenState extends State<DisputeScreen> {
                           if (transaction.state == 'OPEN') {
                             textColor = Colors.red;
                           } else if (transaction.state == 'CLOSED') {
-                            textColor = Colors.orange;
+                            textColor = Colors.green;
                           } else if (transaction.state == 'LOST') {
                             textColor = Colors.red;
-                          } else if (transaction.state == 'WON') {
+                          }
+                          else if (transaction.state == 'PROCESS_EXPIRED') {
+                            textColor = Colors.red;
+                          }else if (transaction.state == 'WON') {
                             textColor = Colors.green;
                           } else {
                             textColor = Colors.orange;
@@ -444,7 +454,10 @@ class DisputeScreenState extends State<DisputeScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(1.0),
                                           child: Text(
-                                            transaction.state,
+                                            transaction.state
+                                                    ?.toString()
+                                                    ?.replaceAll('_', ' ') ??
+                                                'Nil',
                                             style: TextStyle(
                                               color: textColor,
                                               fontSize: 14,

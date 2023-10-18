@@ -205,7 +205,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   });
                 }
               },
-              items: <String>['All', 'Success', 'Reject', 'Fail']
+              items: <String>['All', 'SUCCESS', 'FAIL', 'REFUNDING','PENDING']
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
@@ -215,7 +215,7 @@ class _FilterScreenState extends State<FilterScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Merchant ID',
+              'Transaction ID',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

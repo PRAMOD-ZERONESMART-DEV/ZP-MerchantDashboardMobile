@@ -42,7 +42,7 @@ class TransactionsScreenState extends State<TransactionsScreen> {
   void initState() {
     super.initState();
 
-    getTransactionData();
+    getTransactionData("");
 
     _scrollController.addListener(() {
       if (!fromTransaction) {
@@ -50,7 +50,7 @@ class TransactionsScreenState extends State<TransactionsScreen> {
             _scrollController.position.maxScrollExtent) {
           // User reached the end of the list, load more data
           if (!_isLoading) {
-            getTransactionData();
+            getTransactionData("");
           }
         }
       }
@@ -102,7 +102,7 @@ class TransactionsScreenState extends State<TransactionsScreen> {
     super.dispose();
   }
 
-  Future<void> getTransactionData() async {
+  Future<void> getTransactionData(String reqType) async {
     if (_isLoading) {
       return;
     }
@@ -130,9 +130,15 @@ class TransactionsScreenState extends State<TransactionsScreen> {
         if (kDebugMode) {
           print(baseUrl);
         }
+        String finalUrl = '';
+
+        if(reqType.isEmpty){
+          finalUrl = '$baseUrl/v1/merchant/transaction?page=$currentPage&pageLimit=$itemsPerPage';
+        }else{
+          finalUrl = '$baseUrl/v1/merchant/transaction';
+        }
         final response = await http.get(
-          Uri.parse(
-              "$baseUrl/v1/merchant/transaction?page=$currentPage&pageLimit=$itemsPerPage"),
+          Uri.parse(finalUrl),
           headers: {'Authorization': 'Bearer $token'},
         );
 
@@ -165,6 +171,10 @@ class TransactionsScreenState extends State<TransactionsScreen> {
 
           if (kDebugMode) {
             print('orderData: $jsonDataList');
+          }
+          
+          if(reqType == 'filter'){
+            filterData(filteredTransactions);
           }
 
           currentPage++;
@@ -220,21 +230,37 @@ class TransactionsScreenState extends State<TransactionsScreen> {
       ),
     );
   }
+  
+  void filterData(List<Transaction> filteredTransactions){
+
+
+    
+  }
 
   void _applyFilter(
       String startDate, String endDate, String status, String merchantId) {
-    setState(() {
-      filteredTransactions =
-          filterTransactions(startDate, endDate, status, merchantId);
-      if (kDebugMode) {
-        print(filteredTransactions.length);
-      }
-      if (filteredTransactions.isNotEmpty) {
-        setState(() {
-          fromTransaction = true;
-        });
-      }
-    });
+
+    getTransactionData('filter');
+
+
+
+
+    // setState(() {
+    //   filteredTransactions =
+    //       filterTransactions(startDate, endDate, status, merchantId);
+    //   if (kDebugMode) {
+    //     print(filteredTransactions.length);
+    //   }
+    //   if (filteredTransactions.isNotEmpty) {
+    //     setState(() {
+    //       fromTransaction = true;
+    //     });
+    //   }else{
+    //     setState(() {
+    //       txtNoData = 'No Data Found';
+    //     });
+    //   }
+    // });
     _closeFilterScreen(); // Close the filter screen after applying filters
   }
 
@@ -246,6 +272,9 @@ class TransactionsScreenState extends State<TransactionsScreen> {
 
   List<Transaction> filterTransactions(
       String startDate, String endDate, String status, String merchantId) {
+
+    print('status  =>  $status  merchantId   $merchantId ');
+
     return allTransactions.where((transaction) {
       DateTime dateTime = DateTime.parse(transaction.createdAt);
 
@@ -267,13 +296,13 @@ class TransactionsScreenState extends State<TransactionsScreen> {
 
         final isStatusMatch = status == 'All' || transaction.state == status;
 
-        final isMerchantMatch = transaction.merchant == merchantId;
+        final isMerchantMatch = transaction.id == merchantId;
 
         return (isDateInRange || isMerchantMatch) && isStatusMatch;
       } else if (merchantId.isNotEmpty) {
         final isStatusMatch = status == 'All' || transaction.state == status;
 
-        final isMerchantMatch = transaction.merchant == merchantId;
+        final isMerchantMatch = transaction.id == merchantId;
         return (isMerchantMatch) && isStatusMatch;
       } else {
         final isStatusMatch = status == 'All' || transaction.state == status;

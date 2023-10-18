@@ -23,7 +23,6 @@ Future<void> main() async {
 
   final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
   Hive.init(appDocumentDir.path);
-
   // Register the ModelAdapter with the correct type argument
   Hive.registerAdapter<Transaction>(TransactionAdapter());
   Hive.registerAdapter<OrderDataModel>(OrderDataModelAdapter());
@@ -37,7 +36,7 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  Future<bool> isUserLoggedIn() async {
+  Future<bool> isUserLoggedIn()  async {
     final box = await Hive.openBox(Globals.LOGIN_BOX);
     return box.get('isLogin', defaultValue: false);
   }
@@ -46,9 +45,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+
       title: 'Zerone Pay',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF3A3541)),
         useMaterial3: true,
       ),
       initialRoute: '/',

@@ -26,24 +26,37 @@ class HomePageState extends State<HomePageScreen> {
   String currentBalance = '';
   String withdrawableBalance = '';
   late List<Items> items = [];
+  String txtNoData = 'Loading...';
 
   setUserData() async {
-    final box = await Hive.openBox(Globals.LOGIN_BOX);
-    String userName = box.get('userName', defaultValue: '');
-    String token = box.get('token', defaultValue: '');
-    setState(() {
-      Globals.USER_DATA = userName;
-      Globals.AUTH_TOKEN = token;
-    });
-    box.close();
+    if (await Globals.isOffline()) {
+      setState(() {
+        txtNoData = 'Data not found';
+      });
+      Globals.showToast(context, 'Check internet connection.');
+    } else {
+      final box = await Hive.openBox(Globals.LOGIN_BOX);
+      String userName = box.get('userName', defaultValue: '');
+      String token = box.get('token', defaultValue: '');
+      if (token.isNotEmpty) {
+        setState(() {
+          Globals.USER_DATA = userName;
+          Globals.AUTH_TOKEN = token;
+        });
+        box.close();
 
-    getApiRequest('detail');
-    getApiRequest('balance');
+        getApiRequest('detail');
+        getApiRequest('balance');
+      } else {
+        logout();
+      }
+    }
   }
 
   @override
   void initState() {
     super.initState();
+
     setUserData();
   }
 
@@ -170,7 +183,8 @@ class HomePageState extends State<HomePageScreen> {
       } else if (response.statusCode == 401) {
         String message = responseData['message'];
         Globals.showToast(context, message);
-        Navigator.pushReplacementNamed(context, '/login');
+        //Navigator.pushReplacementNamed(context, '/login');
+        logout();
       } else {
         String message = responseData['message'];
         Globals.showToast(context, message);
@@ -195,17 +209,16 @@ class HomePageState extends State<HomePageScreen> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             UserAccountsDrawerHeader(
-
               accountName: Text(
                 name.toUpperCase(),
                 style: const TextStyle(
-                  fontSize: 19.0,
+                  fontSize: 16.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               accountEmail: Text(email,
                   style: const TextStyle(
-                    fontSize: 20.0,
+                    fontSize: 16.0,
                     fontWeight: FontWeight.normal,
                   )),
               currentAccountPictureSize: const Size(70, 70),
@@ -214,7 +227,7 @@ class HomePageState extends State<HomePageScreen> {
                 backgroundImage: AssetImage('assets/images/user.png'),
               ),
               decoration: const BoxDecoration(
-                color: Colors.red,
+                  color: Color(0xFF3A3541),
               ),
             ),
 
@@ -224,7 +237,7 @@ class HomePageState extends State<HomePageScreen> {
               title: const Text('Total Transactions'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/transaction_flow',
+                Navigator.pushNamed(context, '/transactions',
                     arguments: transactionList);
               },
             ),
@@ -291,28 +304,38 @@ class HomePageState extends State<HomePageScreen> {
       body: Container(
         color: Colors.white70,
         padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.2,
-          ),
-          itemCount: items.length,
-          itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              onTap: () {
-                clickedItem(items[index].title);
-              },
-              child: GridItem(
-                title: items[index].title,
-                productivityPercentage: items[index].productPercentage,
-                productPrice: items[index].productPrize,
-                imageAsset: items[index].imageAssets,
-                ratioImage: items[index].ratioImage,
-                index: index,
+        child: items.isEmpty
+            ? Center(
+                child: Text(
+                  txtNoData,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
+            : GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.2,
+                ),
+                itemCount: items.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return GestureDetector(
+                    onTap: () {
+                      clickedItem(items[index].title);
+                    },
+                    child: GridItem(
+                      title: items[index].title,
+                      productivityPercentage: items[index].productPercentage,
+                      productPrice: items[index].productPrize,
+                      imageAsset: items[index].imageAssets,
+                      ratioImage: items[index].ratioImage,
+                      index: index,
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
     );
   }
