@@ -25,15 +25,17 @@ class DisputeScreenState extends State<DisputeScreen> {
   DateTime selectedStartDate = DateTime.now().subtract(const Duration(days: 7));
   DateTime selectedEndDate = DateTime.now();
   String selectedStatus = 'All';
-  String merchantId = '';
+  String tID = '';
   String deadLineDate = '';
   String txtNoData = 'Loading...';
-  List<DisputeDataModel> allDispute = [];
+
+  //List<DisputeDataModel> allDispute = [];
   List<DisputeDataModel> filteredDispute = [];
 
   bool _isLoading = false;
 
   final ScrollController _scrollController = ScrollController();
+
   //int currentPage = 1;
   //int itemsPerPage = 10;
 
@@ -41,7 +43,7 @@ class DisputeScreenState extends State<DisputeScreen> {
   void initState() {
     super.initState();
 
-    getDisputeData();
+    getDisputeData("", "", "", "", "", "");
 
     // _scrollController.addListener(() {
     //   if (_scrollController.position.pixels ==
@@ -108,7 +110,8 @@ class DisputeScreenState extends State<DisputeScreen> {
     super.dispose();
   }
 
-  Future<void> getDisputeData() async {
+  Future<void> getDisputeData(String reqType, String sDate, String eDate,
+      String status, String tId, String deadlineDate) async {
     if (_isLoading) {
       return;
     }
@@ -135,8 +138,39 @@ class DisputeScreenState extends State<DisputeScreen> {
         if (kDebugMode) {
           print(baseUrl);
         }
+
+        if (reqType == 'filter') {
+          if (status == 'PROCESS EXPIRED') {
+            status = 'PROCESS_EXPIRED';
+          } else if (status == 'UNDER REVIEW') {
+            status = 'UNDER_REVIEW';
+          }
+          if (deadlineDate.isNotEmpty) {
+            deadlineDate = revertDate(deadlineDate);
+          }
+        }
+
+        String finalUrl = '';
+
+        if (reqType.isEmpty) {
+          finalUrl = '$baseUrl/v1/merchant/dispute';
+        } else if (tId.isNotEmpty) {
+          finalUrl = '$baseUrl/v1/merchant/dispute?id=$tID';
+        } else if (status != 'All' && deadlineDate.isEmpty) {
+          finalUrl = '$baseUrl/v1/merchant/dispute?state=$status';
+        } else if (deadlineDate.isNotEmpty && status != 'All') {
+          finalUrl =
+              '$baseUrl/v1/merchant/dispute?state=$status&deadline=$deadlineDate';
+        } else if (status == 'All' && deadlineDate.isNotEmpty) {
+          finalUrl = '$baseUrl/v1/merchant/dispute?deadline=$deadlineDate';
+        } else if (deadlineDate.isEmpty) {
+          finalUrl = '$baseUrl/v1/merchant/dispute';
+        }
+
+        print(finalUrl);
+
         final response = await http.get(
-          Uri.parse("$baseUrl/v1/merchant/dispute"),
+          Uri.parse(finalUrl),
           headers: {'Authorization': 'Bearer $token'},
         );
 
@@ -150,24 +184,34 @@ class DisputeScreenState extends State<DisputeScreen> {
 
           List<dynamic> jsonDataList = responseData['data'];
 
+          if (reqType == 'filter') {
+            filteredDispute.clear();
+          }
+
           setState(() {
             // Append new data to the existing list
-            allDispute.addAll(
+            filteredDispute.addAll(
               jsonDataList
                   .map((jsonData) => DisputeDataModel.fromJson(jsonData)),
             );
-            filteredDispute = allDispute;
-            if (filteredDispute.isEmpty) {
-              txtNoData = 'No Data Found';
-            } else {
-              txtNoData = '';
-            }
           });
           //save in localdb
-          saveInLocaleDb(filteredDispute);
+          // saveInLocaleDb(filteredDispute);
 
           if (kDebugMode) {
             print('orderData: $jsonDataList');
+          }
+
+          if (reqType == 'filter') {
+            filterDataApply(sDate, eDate);
+          } else {
+            setState(() {
+              if (filteredDispute.isEmpty) {
+                txtNoData = 'No Data Found';
+              } else {
+                txtNoData = '';
+              }
+            });
           }
 
           //currentPage++;
@@ -204,6 +248,17 @@ class DisputeScreenState extends State<DisputeScreen> {
     return formattedDate;
   }
 
+  String revertDate(String date) {
+    // Parse the input date string into a DateTime object
+    DateTime parsedDateTime = DateFormat('dd-MM-yyyy').parse(date);
+
+    // Format the parsed DateTime object into the desired format ("yyyy-MM-dd")
+    String formattedDate = DateFormat('yyyy-MM-dd').format(parsedDateTime);
+
+    // Return the date in the new format
+    return formattedDate;
+  }
+
   void openScreen() {
     Navigator.push(
       context,
@@ -212,7 +267,7 @@ class DisputeScreenState extends State<DisputeScreen> {
           selectedStartDate: selectedStartDate,
           selectedEndDate: selectedEndDate,
           selectedStatus: selectedStatus,
-          selectedDisputeId: merchantId,
+          selectedDisputeId: tID,
           selectedDeadlineDate: deadLineDate,
           // Add a comma here
           onSubmit: (startDate, endDate, status, transactionId, deadlineDate) {
@@ -228,15 +283,18 @@ class DisputeScreenState extends State<DisputeScreen> {
   }
 
   void _applyFilter(String startDate, String endDate, String status,
-      String merchantId, String deadlineDate) {
+      String transId, String deadlineDate) {
+    getDisputeData("filter", startDate, endDate, status, transId, deadlineDate);
+  }
+
+  void filterDataApply(String startDate, String endDate) {
     setState(() {
-      filteredDispute = filterTransactions(
-          startDate, endDate, status, merchantId, deadlineDate);
+      filteredDispute = filterTransactions(startDate, endDate);
 
       print(filteredDispute.length);
       if (filteredDispute.isEmpty) {
         setState(() {
-          txtNoData = 'No Data Found';
+          txtNoData = 'No data found according to filter';
         });
       }
     });
@@ -249,9 +307,8 @@ class DisputeScreenState extends State<DisputeScreen> {
     });
   }
 
-  List<DisputeDataModel> filterTransactions(String startDate, String endDate,
-      String status, String merchantId, String deadlineDate) {
-    return allDispute.where((transaction) {
+  List<DisputeDataModel> filterTransactions(String startDate, String endDate) {
+    return filteredDispute.where((transaction) {
       //  DateTime transactionDate =
       //   DateFormat('dd-MM-yyyy').parse(transaction.createdAt);
 
@@ -259,51 +316,22 @@ class DisputeScreenState extends State<DisputeScreen> {
 
       print('dateTime Date: $dateTime');
 
-      if (startDate.isNotEmpty && endDate.isNotEmpty) {
-        merchantId = '';
-        var isDateInRange = false;
+      var isDateInRange = false;
 
-        print('transactionDate Date: $dateTime');
+      print('transactionDate Date: $dateTime');
 
-        // if (startDate.isNotEmpty && endDate.isNotEmpty) {
-        DateTime sDate = DateFormat('dd-MM-yyyy').parse(startDate);
-        DateTime eDate = DateFormat('dd-MM-yyyy').parse(endDate);
+      // if (startDate.isNotEmpty && endDate.isNotEmpty) {
+      DateTime sDate = DateFormat('dd-MM-yyyy').parse(startDate);
+      DateTime eDate = DateFormat('dd-MM-yyyy').parse(endDate);
 
-        // print('Start Date: $sDate, End Date: $eDate');
+      // print('Start Date: $sDate, End Date: $eDate');
 
-        isDateInRange = dateTime.isBefore(eDate.add(const Duration(days: 1))) &&
-            dateTime.isAfter(sDate.subtract(const Duration(days: 1)));
-        // print('isDateInRange: $isDateInRange');
-        // }
+      isDateInRange = dateTime.isBefore(eDate.add(const Duration(days: 1))) &&
+          dateTime.isAfter(sDate.subtract(const Duration(days: 1)));
+      // print('isDateInRange: $isDateInRange');
+      // }
 
-        final isStatusMatch = status == 'All' || transaction.state == status;
-
-        final isMerchantMatch = transaction.id == merchantId;
-
-        final isDeadLineMatch = transaction.deadline == deadlineDate;
-
-        return (isDateInRange || isMerchantMatch || isDeadLineMatch) &&
-            isStatusMatch;
-      } else if (merchantId.isNotEmpty) {
-        final isStatusMatch = status == 'All' || transaction.state == status;
-
-        final isMerchantMatch = transaction.id == merchantId;
-        return (isMerchantMatch) && isStatusMatch;
-      } else if (deadlineDate.isNotEmpty) {
-        final isStatusMatch = status == 'All' || transaction.state == status;
-
-        DateTime deadline = DateTime.parse(transaction.deadline);
-        String formattedDeadline = DateFormat('dd-MM-yyyy').format(deadline);
-
-        print(
-            'deadline date ===>>>    $formattedDeadline'); // This will print "22-09-2023"
-
-        final isDeadLineMatch = formattedDeadline == deadlineDate;
-        return (isDeadLineMatch) && isStatusMatch;
-      } else {
-        final isStatusMatch = status == 'All' || transaction.state == status;
-        return (isStatusMatch);
-      }
+      return (isDateInRange);
     }).toList();
   }
 
@@ -358,17 +386,15 @@ class DisputeScreenState extends State<DisputeScreen> {
                           final transaction = filteredDispute[index];
                           var textColor = Colors.green; // Default color
 
-                          if (transaction.state == 'OPEN') {
+                          if (transaction.state == 'OPEN' ||
+                              transaction.state == 'LOST' ||
+                              transaction.state == 'PROCESS_EXPIRED') {
                             textColor = Colors.red;
-                          } else if (transaction.state == 'CLOSED') {
+                          } else if (transaction.state == 'CLOSED' ||
+                              transaction.state == 'WON') {
                             textColor = Colors.green;
-                          } else if (transaction.state == 'LOST') {
-                            textColor = Colors.red;
-                          }
-                          else if (transaction.state == 'PROCESS_EXPIRED') {
-                            textColor = Colors.red;
-                          }else if (transaction.state == 'WON') {
-                            textColor = Colors.green;
+                          } else if (transaction.state == 'UNDER_REVIEW') {
+                            textColor = Colors.orange;
                           } else {
                             textColor = Colors.orange;
                           } // Add more conditions for other status values
