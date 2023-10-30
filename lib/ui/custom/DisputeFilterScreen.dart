@@ -225,7 +225,7 @@ class _DisputeFilterScreenState extends State<DisputeFilterScreen> {
                   });
                 }
               },
-              items: <String>['All', 'OPEN', 'CLOSED', 'WON', 'LOST' ]
+              items: <String>['All', 'OPEN', 'CLOSED', 'WON', 'LOST','PROCESS EXPIRED', 'UNDER REVIEW' ]
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
@@ -278,11 +278,11 @@ class _DisputeFilterScreenState extends State<DisputeFilterScreen> {
             const SizedBox(height: 4.0),
             GestureDetector(
               onTap: () {
-                if(stringEndDate.isEmpty && stringStartDate.isEmpty && disputeId.isEmpty){
+               // if(stringEndDate.isEmpty && stringStartDate.isEmpty && disputeId.isEmpty){
                   _selectDeadLineDate(context);
-                }else{
-                  Globals.showToast(context, 'Not editable ');
-                }
+               // }else{
+                 // Globals.showToast(context, 'Not editable ');
+               // }
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,

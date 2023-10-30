@@ -28,7 +28,7 @@ class TransactionsScreenState extends State<TransactionsScreen> {
   String merchantId = "";
   String txtNoData = 'Loading...';
 
-  List<Transaction> allTransactions = [];
+  //List<Transaction> allTransactions = [];
   List<Transaction> filteredTransactions = [];
 
   bool _isLoading = false;
@@ -42,7 +42,7 @@ class TransactionsScreenState extends State<TransactionsScreen> {
   void initState() {
     super.initState();
 
-    getTransactionData("");
+    getTransactionData("", "", "", "", "");
 
     _scrollController.addListener(() {
       if (!fromTransaction) {
@@ -50,7 +50,7 @@ class TransactionsScreenState extends State<TransactionsScreen> {
             _scrollController.position.maxScrollExtent) {
           // User reached the end of the list, load more data
           if (!_isLoading) {
-            getTransactionData("");
+            getTransactionData("", "", "", "", "");
           }
         }
       }
@@ -102,7 +102,8 @@ class TransactionsScreenState extends State<TransactionsScreen> {
     super.dispose();
   }
 
-  Future<void> getTransactionData(String reqType) async {
+  Future<void> getTransactionData(String reqType, String sDate, String eDate,
+      String status, String merchantId) async {
     if (_isLoading) {
       return;
     }
@@ -132,10 +133,19 @@ class TransactionsScreenState extends State<TransactionsScreen> {
         }
         String finalUrl = '';
 
-        if(reqType.isEmpty){
-          finalUrl = '$baseUrl/v1/merchant/transaction?page=$currentPage&pageLimit=$itemsPerPage';
-        }else{
-          finalUrl = '$baseUrl/v1/merchant/transaction';
+        if (reqType.isEmpty) {
+          finalUrl =
+              '$baseUrl/v1/merchant/transaction?page=$currentPage&pageLimit=$itemsPerPage';
+        } else {
+          if (merchantId.isNotEmpty) {
+            finalUrl = '$baseUrl/v1/merchant/transaction?id=$merchantId';
+          } else {
+            if (status == 'All') {
+              finalUrl = '$baseUrl/v1/merchant/transaction';
+            } else {
+              finalUrl = '$baseUrl/v1/merchant/transaction?state=$status';
+            }
+          }
         }
         final response = await http.get(
           Uri.parse(finalUrl),
@@ -152,12 +162,22 @@ class TransactionsScreenState extends State<TransactionsScreen> {
 
           List<dynamic> jsonDataList = responseData['data'];
 
+          // if (filteredTransactions.isNotEmpty) {
+          //  // allTransactions.clear();
+          //   filteredTransactions.clear();
+          // }
+
+          if (reqType == 'filter') {
+            filteredTransactions.clear();
+          }
+
           setState(() {
             // Append new data to the existing list
-            allTransactions.addAll(
+            filteredTransactions.addAll(
               jsonDataList.map((jsonData) => Transaction.fromJson(jsonData)),
             );
-            filteredTransactions = allTransactions;
+
+            // filteredTransactions = allTransactions;
 
             if (filteredTransactions.isEmpty) {
               txtNoData = 'No Data Found';
@@ -169,12 +189,12 @@ class TransactionsScreenState extends State<TransactionsScreen> {
           //save in localdb
           //saveInLocaleDb(filteredOrders);
 
-          if (kDebugMode) {
-            print('orderData: $jsonDataList');
-          }
-          
-          if(reqType == 'filter'){
-            filterData(filteredTransactions);
+          // if (kDebugMode) {
+          //   print('TransactionData: $jsonDataList');
+          // }
+
+          if (reqType == 'filter') {
+            filterData(sDate, eDate);
           }
 
           currentPage++;
@@ -187,8 +207,13 @@ class TransactionsScreenState extends State<TransactionsScreen> {
             txtNoData = 'No Data Found';
           });
 
-          String message = responseData['message'];
-          Globals.showToast(context, message);
+          try {
+            String message = responseData['message'];
+            Globals.showToast(context, message);
+          } catch (e) {
+            List<String> messages = List<String>.from(responseData['message']);
+            Globals.showToast(context, '$messages');
+          }
         }
       } catch (e) {
         // Handle other exceptions
@@ -230,20 +255,31 @@ class TransactionsScreenState extends State<TransactionsScreen> {
       ),
     );
   }
-  
-  void filterData(List<Transaction> filteredTransactions){
 
+  void filterData(String sDate, String eDate) {
+    if (sDate.isNotEmpty && eDate.isNotEmpty) {
+      filteredTransactions = filterTransactions(sDate, eDate);
+    }
 
-    
+    if (filteredTransactions.isEmpty) {
+      txtNoData = 'No data found according to filter';
+    }
+
+    _closeFilterScreen();
   }
 
   void _applyFilter(
       String startDate, String endDate, String status, String merchantId) {
-
-    getTransactionData('filter');
-
-
-
+    getTransactionData('filter', startDate, endDate, status, merchantId);
+    if (filteredTransactions.isNotEmpty) {
+      setState(() {
+        fromTransaction = true;
+      });
+    } else {
+      setState(() {
+        txtNoData = 'No Data Found';
+      });
+    }
 
     // setState(() {
     //   filteredTransactions =
@@ -261,7 +297,7 @@ class TransactionsScreenState extends State<TransactionsScreen> {
     //     });
     //   }
     // });
-    _closeFilterScreen(); // Close the filter screen after applying filters
+    // Close the filter screen after applying filters
   }
 
   void _openFilterScreen() {
@@ -270,44 +306,25 @@ class TransactionsScreenState extends State<TransactionsScreen> {
     });
   }
 
-  List<Transaction> filterTransactions(
-      String startDate, String endDate, String status, String merchantId) {
+  List<Transaction> filterTransactions(String startDate, String endDate) {
+    print('startDate  =>  $startDate  endDate   $endDate ');
 
-    print('status  =>  $status  merchantId   $merchantId ');
-
-    return allTransactions.where((transaction) {
+    return filteredTransactions.where((transaction) {
       DateTime dateTime = DateTime.parse(transaction.createdAt);
 
+      var isDateInRange = false;
+
       if (startDate.isNotEmpty && endDate.isNotEmpty) {
-        merchantId = '';
-        var isDateInRange = false;
+        DateTime sDate = DateFormat('dd-MM-yyyy').parse(startDate);
+        DateTime eDate = DateFormat('dd-MM-yyyy').parse(endDate);
 
-        if (startDate.isNotEmpty && endDate.isNotEmpty) {
-          DateTime sDate = DateFormat('dd-MM-yyyy').parse(startDate);
-          DateTime eDate = DateFormat('dd-MM-yyyy').parse(endDate);
+        // print('Start Date: $sDate, End Date: $eDate');
 
-          // print('Start Date: $sDate, End Date: $eDate');
-
-          isDateInRange =
-              dateTime.isBefore(eDate.add(const Duration(days: 1))) &&
-                  dateTime.isAfter(sDate.subtract(const Duration(days: 1)));
-          //print('isDateInRange: $isDateInRange');
-        }
-
-        final isStatusMatch = status == 'All' || transaction.state == status;
-
-        final isMerchantMatch = transaction.id == merchantId;
-
-        return (isDateInRange || isMerchantMatch) && isStatusMatch;
-      } else if (merchantId.isNotEmpty) {
-        final isStatusMatch = status == 'All' || transaction.state == status;
-
-        final isMerchantMatch = transaction.id == merchantId;
-        return (isMerchantMatch) && isStatusMatch;
-      } else {
-        final isStatusMatch = status == 'All' || transaction.state == status;
-        return (isStatusMatch);
+        isDateInRange = dateTime.isBefore(eDate.add(const Duration(days: 1))) &&
+            dateTime.isAfter(sDate.subtract(const Duration(days: 1)));
+        //print('isDateInRange: $isDateInRange');
       }
+      return (isDateInRange);
     }).toList();
   }
 
@@ -356,20 +373,22 @@ class TransactionsScreenState extends State<TransactionsScreen> {
                     )
                   : ListView.builder(
                       controller: _scrollController,
-                      itemCount: filteredTransactions.length + (_isLoading ? 1 : 0),
+                      itemCount:
+                          filteredTransactions.length + (_isLoading ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index < filteredTransactions.length) {
                           final transaction = filteredTransactions[index];
                           var textColor = Colors.green; // Default color
 
-                          if (transaction.state == 'PENDING') {
+                          if (transaction.state == 'REFUNDING') {
                             textColor = Colors.orange;
-                          } else if (transaction.state == 'FAIL') {
+                          } else if (transaction.state == 'FAIL' ||
+                              transaction.state == 'REJECT' ||
+                              transaction.state == 'EXPIRED' ||
+                              transaction.state == 'DECLINED') {
                             textColor = Colors.red;
                           } else if (transaction.state == 'SUCCESS') {
                             textColor = Colors.green;
-                          } else if (transaction.state == 'REFUNDING') {
-                            textColor = Colors.grey;
                           } // Add more conditions for other status values
 
                           return Card(

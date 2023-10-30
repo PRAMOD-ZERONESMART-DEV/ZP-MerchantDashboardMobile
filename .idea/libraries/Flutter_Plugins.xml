@@ -1,6 +1,20 @@
 <component name="libraryTable">
   <library name="Flutter Plugins" type="FlutterPluginsLibraryType">
-    <CLASSES />
+    <CLASSES>
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider-2.1.1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_android-2.2.0" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/grecaptcha-0.0.6" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-2.9.5" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/webview_flutter-3.0.4" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/connectivity_for_web-0.4.0+1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/connectivity-3.0.6" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/webview_flutter_android-2.10.4" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_foundation-2.3.1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_local_notifications-16.0.0+1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_windows-2.2.1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/fluttertoast-8.2.2" />
+    </CLASSES>
     <JAVADOC />
     <SOURCES />
   </library>

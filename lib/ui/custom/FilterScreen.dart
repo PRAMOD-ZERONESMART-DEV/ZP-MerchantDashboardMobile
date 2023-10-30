@@ -31,7 +31,6 @@ class _FilterScreenState extends State<FilterScreen> {
   late String stringStartDate = '';
   late String stringEndDate = '';
 
-
   @override
   void initState() {
     super.initState();
@@ -39,7 +38,6 @@ class _FilterScreenState extends State<FilterScreen> {
     endDate = widget.selectedEndDate;
     status = widget.selectedStatus;
     merchantId = widget.selectedMerchantId;
-
   }
 
   Future<void> _selectStartDate(BuildContext context) async {
@@ -98,7 +96,6 @@ class _FilterScreenState extends State<FilterScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
-
         color: Colors.white,
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -205,8 +202,15 @@ class _FilterScreenState extends State<FilterScreen> {
                   });
                 }
               },
-              items: <String>['All', 'SUCCESS', 'FAIL', 'REFUNDING','PENDING']
-                  .map<DropdownMenuItem<String>>((String value) {
+              items: <String>[
+                'All',
+                'SUCCESS',
+                'FAIL',
+                'REJECT',
+                'REFUNDING',
+                'EXPIRED',
+                'DECLINED'
+              ].map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
@@ -261,7 +265,8 @@ class _FilterScreenState extends State<FilterScreen> {
                 SizedBox(width: 16),
                 ElevatedButton(
                   onPressed: () {
-                    widget.onSubmit(stringStartDate, stringEndDate, status, merchantId);
+                    widget.onSubmit(
+                        stringStartDate, stringEndDate, status, merchantId);
                     Navigator.pop(context); // Close the filter screen
                   },
                   child: Text('Submit'),
